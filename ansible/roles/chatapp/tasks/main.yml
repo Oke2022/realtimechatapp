@@ -55,10 +55,14 @@
     state: present
 
 # 🧱 Rest of your tasks remain the same:
+- name: Remove old chat app image (force refresh)
+  shell: docker rmi -f okejoshua/realtime-chat-app:latest || true
+
 - name: Pull chat app Docker image
   docker_image:
     name: okejoshua/realtime-chat-app:latest
     source: pull
+    force_source: yes
 
 - name: Stop running container if exists
   shell: |
