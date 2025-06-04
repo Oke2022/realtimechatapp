@@ -9,6 +9,23 @@
     li { padding: 0.5rem 0; }
     input { width: 90%; padding: 0.5rem; }
     button { padding: 0.5rem 1rem; }
+
+    .my-message {
+  text-align: right;
+  background-color: #dcf8c6;
+  padding: 0.5rem;
+  margin: 0.3rem 0;
+  border-radius: 12px 12px 0 12px;
+}
+
+.other-message {
+  text-align: left;
+  background-color: #f1f0f0;
+  padding: 0.5rem;
+  margin: 0.3rem 0;
+  border-radius: 12px 12px 12px 0;
+}
+
   </style>
 </head>
 <body>
@@ -21,25 +38,32 @@
   </div>
   <script src="/socket.io/socket.io.js"></script>
   <script>
-    var socket = io();
-    var form = document.getElementById('form');
-    var input = document.getElementById('input');
-    var messages = document.getElementById('messages');
+  var socket = io();
+  var form = document.getElementById('form');
+  var input = document.getElementById('input');
+  var messages = document.getElementById('messages');
 
-    form.addEventListener('submit', function(e) {
-      e.preventDefault();
-      if (input.value) {
-        socket.emit('chat message', input.value);
-        input.value = '';
-      }
-    });
+  form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    if (input.value) {
+      socket.emit('chat message', input.value);
+      input.value = '';
+    }
+  });
 
-    socket.on('chat message', function(msg) {
-      var item = document.createElement('li');
-      item.textContent = msg;
-      messages.appendChild(item);
-      window.scrollTo(0, document.body.scrollHeight);
-    });
-  </script>
+  socket.on('chat message', function(data) {
+    var item = document.createElement('li');
+    item.textContent = data.msg;
+
+    if (data.id === socket.id) {
+      item.classList.add('my-message');
+    } else {
+      item.classList.add('other-message');
+    }
+
+    messages.appendChild(item);
+    window.scrollTo(0, document.body.scrollHeight);
+  });
+</script>
 </body>
 </html>
