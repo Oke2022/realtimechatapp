@@ -1,0 +1,6 @@
+- name: Deploy Real-Time Chat App
+  hosts: chat_server
+  become: true
+
+  roles:
+    - chatapp
