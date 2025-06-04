@@ -57,7 +57,7 @@
 # 🧱 Rest of your tasks remain the same:
 - name: Pull chat app Docker image
   docker_image:
-    name: okejoshua/realtime-chat-app
+    name: okejoshua/realtime-chat-app:latest
     source: pull
 
 - name: Stop running container if exists
@@ -68,7 +68,7 @@
 - name: Run chat app container
   docker_container:
     name: chatapp
-    image: okejoshua/realtime-chat-app
+    image: okejoshua/realtime-chat-app:latest
     state: started
     ports:
       - "3000:3000"
