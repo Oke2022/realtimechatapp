@@ -2,23 +2,29 @@ pipeline {
   agent any
 
   environment {
-    IMAGE_NAME = 'okejoshua/realtime-chat-app'
+    IMAGE_NAME = 'okejoshua/realtime-chat-app:latest'
     DOCKER_CREDENTIALS_ID = 'dockerhub-creds'
-    SSH_CREDENTIALS_ID = 'ec2-ssh-key'
+    SSH_CREDENTIALS_ID = 'ec2-ssh'
     EC2_HOST = '13.58.25.183'
   }
 
   stages {
-    stage('Clone Repo') {
+    stage('Clean Workspace') {
       steps {
-        git url: 'https://github.com/Oke2022/realtimechatapp.git'
+        cleanWs()
+      }
+    }
+
+    stage('Checkout') {
+      steps {
+        checkout scm
       }
     }
 
     stage('Build Docker Image') {
       steps {
         script {
-          dockerImage = docker.build(IMAGE_NAME)
+          dockerImage = docker.build("${IMAGE_NAME}")
         }
       }
     }
@@ -26,19 +32,21 @@ pipeline {
     stage('Push Docker Image') {
       steps {
         withCredentials([usernamePassword(credentialsId: DOCKER_CREDENTIALS_ID, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-          sh '''
-            echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-            docker push $IMAGE_NAME
-          '''
+          script {
+            sh '''
+              echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+              docker push $IMAGE_NAME
+            '''
+          }
         }
       }
     }
 
-    stage('Deploy with Ansible') {
+    stage('Deploy to EC2 with Ansible') {
       steps {
         sshagent([SSH_CREDENTIALS_ID]) {
           sh '''
-            cd ansible
+            cd realtimechatapp/ansible
             ansible-playbook -i inventory playbook.yml
           '''
         }
@@ -47,11 +55,14 @@ pipeline {
   }
 
   post {
+    always {
+      cleanWs()
+    }
     success {
-      echo 'Deployment completed successfully!'
+      echo '✅ Deployment completed successfully!'
     }
     failure {
-      echo 'Something went wrong. Check the logs.'
+      echo '❌ Something went wrong. Check the logs.'
     }
   }
 }
