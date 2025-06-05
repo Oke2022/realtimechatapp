@@ -50,7 +50,7 @@ pipeline {
             steps {
                 sshagent(['ec2-ssh']) {
                     sh '''
-                        cd realtimechatapp/ansible
+                        cd ansible/
                         ansible-playbook -i inventory playbook.yml
                     '''
                 }
