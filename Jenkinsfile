@@ -22,6 +22,12 @@ pipeline {
             }
         }
 
+        stage('Docker Hub Login') {
+            steps {
+                sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
                 sh 'docker build -t $DOCKER_IMAGE:$DOCKER_TAG .'
@@ -31,12 +37,6 @@ pipeline {
         stage('Tag Image for Docker Hub') {
             steps {
                 sh 'docker tag $DOCKER_IMAGE:$DOCKER_TAG $DOCKERHUB_REPO:$DOCKER_TAG'
-            }
-        }
-
-        stage('Docker Hub Login') {
-            steps {
-                sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
             }
         }
 
