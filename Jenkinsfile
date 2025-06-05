@@ -2,15 +2,14 @@ pipeline {
   agent any
 
   environment {
-    IMAGE_NAME = 'okejoshua/realtime-chat-app'
+    IMAGE_NAME = 'okejoshua/realtime-chat-app:latest'
     DOCKER_CREDENTIALS_ID = 'dockerhub-creds'
     SSH_CREDENTIALS_ID = 'ec2-ssh'
-    EC2_HOST = '13.58.25.183'  // Replace with your actual deployment server IP
-    DOCKERFILE_DIR = 'realtimechatapp/chatapp/'     // Update this to match your actual path
+    EC2_HOST = '13.58.25.183'
   }
 
   stages {
-    stage('Clean Workspace Before Build') {
+    stage('Clean Workspace') {
       steps {
         cleanWs()
       }
@@ -25,7 +24,7 @@ pipeline {
     stage('Build Docker Image') {
       steps {
         script {
-          dockerImage = docker.build("${IMAGE_NAME}", "${DOCKERFILE_DIR}")
+          dockerImage = docker.build("${IMAGE_NAME}")
         }
       }
     }
@@ -33,15 +32,17 @@ pipeline {
     stage('Push Docker Image') {
       steps {
         withCredentials([usernamePassword(credentialsId: DOCKER_CREDENTIALS_ID, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-          sh '''
-            echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-            docker push $IMAGE_NAME
-          '''
+          script {
+            sh '''
+              echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+              docker push $IMAGE_NAME
+            '''
+          }
         }
       }
     }
 
-    stage('Deploy with Ansible') {
+    stage('Deploy to EC2 with Ansible') {
       steps {
         sshagent([SSH_CREDENTIALS_ID]) {
           sh '''
@@ -58,10 +59,10 @@ pipeline {
       cleanWs()
     }
     success {
-      echo 'Deployment completed successfully!'
+      echo '✅ Deployment completed successfully!'
     }
     failure {
-      echo 'Something went wrong. Check the logs.'
+      echo '❌ Something went wrong. Check the logs.'
     }
   }
 }

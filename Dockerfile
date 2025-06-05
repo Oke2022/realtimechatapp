@@ -2,7 +2,7 @@ FROM node:20
 
 WORKDIR /app
 
-COPY package*.json ./
+COPY ./caht-app/package*.json ./
 RUN npm install
 
 COPY . .
