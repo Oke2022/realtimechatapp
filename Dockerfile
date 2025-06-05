@@ -2,7 +2,7 @@ FROM node:20
 
 WORKDIR /app
 
-COPY ./caht-app/package*.json ./
+COPY ./chat-app/package*.json ./
 RUN npm install
 
 COPY . .
