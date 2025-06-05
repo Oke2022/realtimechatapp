@@ -1,68 +1,72 @@
-pipeline {
-  agent any
+pipeline { 
+    agent any
 
-  environment {
-    IMAGE_NAME = 'okejoshua/realtime-chat-app:latest'
-    DOCKER_CREDENTIALS_ID = 'dockerhub-creds'
-    SSH_CREDENTIALS_ID = 'ec2-ssh'
-    EC2_HOST = '13.58.25.183'
-  }
-
-  stages {
-    stage('Clean Workspace') {
-      steps {
-        cleanWs()
-      }
+    environment {
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds') 
+        DOCKER_IMAGE = 'realtime-chat-app'
+        DOCKER_TAG = 'latest'
+        DOCKERHUB_REPO = 'okejoshua/realtime-chat-app'
+        APP_CONTEXT = './chat-app' // Adjusted to match your folder structure
     }
 
-    stage('Checkout') {
-      steps {
-        checkout scm
-      }
-    }
-
-    stage('Build Docker Image') {
-      steps {
-        script {
-          dockerImage = docker.build("${IMAGE_NAME}")
+    stages {
+        stage('Clean Workspace Before Build') {
+            steps {
+                cleanWs()
+            }
         }
-      }
-    }
 
-    stage('Push Docker Image') {
-      steps {
-        withCredentials([usernamePassword(credentialsId: DOCKER_CREDENTIALS_ID, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-          script {
-            sh '''
-              echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-              docker push $IMAGE_NAME
-            '''
-          }
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
         }
-      }
-    }
 
-    stage('Deploy to EC2 with Ansible') {
-      steps {
-        sshagent([SSH_CREDENTIALS_ID]) {
-          sh '''
-            cd realtimechatapp/ansible
-            ansible-playbook -i inventory playbook.yml
-          '''
+        stage('Build Docker Image') {
+            steps {
+                sh 'docker build -t $DOCKER_IMAGE:$DOCKER_TAG $APP_CONTEXT'
+            }
         }
-      }
-    }
-  }
 
-  post {
-    always {
-      cleanWs()
+        stage('Tag Image for Docker Hub') {
+            steps {
+                sh 'docker tag $DOCKER_IMAGE:$DOCKER_TAG $DOCKERHUB_REPO:$DOCKER_TAG'
+            }
+        }
+
+        stage('Docker Hub Login') {
+            steps {
+                sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
+            }
+        }
+
+        stage('Push to Docker Hub') {
+            steps {
+                sh 'docker push $DOCKERHUB_REPO:$DOCKER_TAG'
+            }
+        }
+
+        stage('Deploy with Ansible') {
+            steps {
+                sshagent(['ec2-ssh']) {
+                    sh '''
+                        cd realtimechatapp/ansible
+                        ansible-playbook -i inventory playbook.yml
+                    '''
+                }
+            }
+        }
     }
-    success {
-      echo '✅ Deployment completed successfully!'
+
+    post {
+        always {
+            cleanWs()
+        }
+        success {
+            echo '✅ Deployment completed successfully!'
+        }
+        failure {
+            echo '❌ Something went wrong. Check the logs.'
+        }
     }
-    failure {
-      echo '❌ Something went wrong. Check the logs.'
-    }
-  }
 }
