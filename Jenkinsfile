@@ -60,22 +60,6 @@ pipeline {
                 }
             }
         }
-
-        // 🔥 Terraform Destroy Stage (optional based on param)
-        stage('Destroy Infrastructure') {
-            when {
-                expression { params.DESTROY_INFRA == true }
-            }
-            steps {
-                sshagent(['ec2-ssh']) {
-                    sh '''
-                        cd terraform/
-                        terraform init
-                        terraform destroy -auto-approve
-                    '''
-                }
-            }
-        }
     }
 
     post {
