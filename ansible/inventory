@@ -1,1 +1,1 @@
-chat_server ansible_host=13.58.25.183 ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/my-key1.pem ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+chat_server ansible_host=172.31.39.78 ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/my-key1.pem ansible_ssh_common_args='-o StrictHostKeyChecking=no'
