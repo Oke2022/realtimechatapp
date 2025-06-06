@@ -1,12 +1,16 @@
-pipeline { 
+pipeline {
     agent any
 
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds') 
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds')
         DOCKER_IMAGE = 'realtime-chat-app'
         DOCKER_TAG = 'latest'
         DOCKERHUB_REPO = 'okejoshua/realtime-chat-app'
         APP_CONTEXT = './chat-app' // Adjusted to match your folder structure
+    }
+
+    parameters {
+        booleanParam(name: 'DESTROY_INFRA', defaultValue: false, description: 'Check this to destroy Terraform infrastructure')
     }
 
     stages {
@@ -56,6 +60,22 @@ pipeline {
                 }
             }
         }
+
+        // 🔥 Terraform Destroy Stage (optional based on param)
+        stage('Destroy Infrastructure') {
+            when {
+                expression { params.DESTROY_INFRA == true }
+            }
+            steps {
+                sshagent(['ec2-ssh']) {
+                    sh '''
+                        cd terraform/
+                        terraform init
+                        terraform destroy -auto-approve
+                    '''
+                }
+            }
+        }
     }
 
     post {
@@ -70,3 +90,4 @@ pipeline {
         }
     }
 }
+
